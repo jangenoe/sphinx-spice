@@ -1,0 +1,218 @@
+# -*- coding: utf-8 -*-
+"""
+sphinx_spice_file
+~~~~~~~~~~~~~~~
+This package is an extension for sphinx to support spice_file and solutions.
+:copyright: Copyright 2020-2021 by the Executable Books team, see AUTHORS.
+:license: MIT, see LICENSE for details.
+"""
+
+__version__ = "1.0.1"
+
+
+from pathlib import Path
+from typing import Any, Dict, Set, Union, cast
+from sphinx.config import Config
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
+from sphinx.domains.std import StandardDomain
+from docutils.nodes import Node
+from sphinx.util import logging
+from sphinx.util.fileutil import copy_asset
+
+from ._compat import findall
+from .directive import (
+    spice_fileDirective,
+    spice_fileStartDirective,
+    spice_fileEndDirective,
+    SolutionDirective,
+    SolutionStartDirective,
+    SolutionEndDirective,
+)
+from .nodes import (
+    spice_file_node,
+    visit_spice_file_node,
+    depart_spice_file_node,
+    spice_file_enumerable_node,
+    visit_spice_file_enumerable_node,
+    depart_spice_file_enumerable_node,
+    spice_file_end_node,
+    solution_node,
+    visit_solution_node,
+    depart_solution_node,
+    solution_start_node,
+    solution_end_node,
+    is_extension_node,
+    spice_file_title,
+    spice_file_subtitle,
+    solution_title,
+    solution_subtitle,
+    spice_file_latex_number_reference,
+    visit_spice_file_latex_number_reference,
+    depart_spice_file_latex_number_reference,
+)
+from .transforms import (
+    CheckGatedDirectives,
+    MergeGatedSolutions,
+    MergeGatedspice_files,
+)
+from .post_transforms import (
+    ResolveTitlesInspice_files,
+    ResolveTitlesInSolutions,
+    UpdateReferencesToEnumerated,
+    ResolveLinkTextToSolutions,
+)
+
+logger = logging.getLogger(__name__)
+
+
+# Callback Functions
+
+
+def purge_spice_files(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
+    """Purge sphinx_spice_file registry"""
+
+    if not hasattr(env, "sphinx_spice_file_registry"):
+        return
+
+    # Purge env.sphinx_spice_file_registry if matching docname
+    remove_labels = [
+        label
+        for (label, node) in env.sphinx_spice_file_registry.items()
+        if node["docname"] == docname
+    ]
+    if remove_labels:
+        for label in remove_labels:
+            del env.sphinx_spice_file_registry[label]
+
+
+def merge_spice_files(
+    app: Sphinx, env: BuildEnvironment, docnames: Set[str], other: BuildEnvironment
+) -> None:
+    """Merge sphinx_spice_file_registry"""
+
+    if not hasattr(env, "sphinx_spice_file_registry"):
+        env.sphinx_spice_file_registry = {}
+
+    # Merge env stored data
+    if hasattr(other, "sphinx_spice_file_registry"):
+        env.sphinx_spice_file_registry = {
+            **env.sphinx_spice_file_registry,
+            **other.sphinx_spice_file_registry,
+        }
+
+
+def init_numfig(app: Sphinx, config: Config) -> None:
+    """Initialize numfig"""
+
+    config["numfig"] = True
+    numfig_format = {"spice_file": "spice_file %s"}
+    # Merge with current sphinx settings
+    numfig_format.update(config.numfig_format)
+    config.numfig_format = numfig_format
+
+
+def copy_asset_files(app: Sphinx, exc: Union[bool, Exception]):
+    """Copies required assets for formating in HTML"""
+
+    static_path = (
+        Path(__file__).parent.joinpath("assets", "html", "spice_file.css").absolute()
+    )
+    asset_files = [str(static_path)]
+
+    if exc is None:
+        for path in asset_files:
+            copy_asset(path, str(Path(app.outdir).joinpath("_static").absolute()))
+
+
+def doctree_read(app: Sphinx, document: Node) -> None:
+    """
+    Read the doctree and apply updates to sphinx-spice_file nodes
+    """
+
+    domain = cast(StandardDomain, app.env.get_domain("std"))
+
+    # Traverse sphinx-spice_file nodes
+    for node in findall(document):
+        if is_extension_node(node):
+            name = node.get("names", [])[0]
+            label = document.nameids[name]
+            docname = app.env.docname
+            section_name = node.attributes.get("title")
+            domain.anonlabels[name] = docname, label
+            domain.labels[name] = docname, label, section_name
+
+
+def setup(app: Sphinx) -> Dict[str, Any]:
+    app.add_config_value("hide_solutions", False, "env")
+
+    app.connect("config-inited", init_numfig)  # event order - 1
+    app.connect("env-purge-doc", purge_spice_files)  # event order - 5 per file
+    app.connect("doctree-read", doctree_read)  # event order - 8
+    app.connect("env-merge-info", merge_spice_files)  # event order - 9
+    app.connect("build-finished", copy_asset_files)  # event order - 16
+
+    app.add_node(
+        spice_file_node,
+        singlehtml=(visit_spice_file_node, depart_spice_file_node),
+        html=(visit_spice_file_node, depart_spice_file_node),
+        latex=(visit_spice_file_node, depart_spice_file_node),
+    )
+
+    app.add_enumerable_node(
+        spice_file_enumerable_node,
+        "spice_file",
+        None,
+        singlehtml=(visit_spice_file_enumerable_node, depart_spice_file_enumerable_node),
+        html=(visit_spice_file_enumerable_node, depart_spice_file_enumerable_node),
+        latex=(visit_spice_file_enumerable_node, depart_spice_file_enumerable_node),
+    )
+
+    app.add_node(
+        solution_node,
+        singlehtml=(visit_solution_node, depart_solution_node),
+        html=(visit_solution_node, depart_solution_node),
+        latex=(visit_solution_node, depart_solution_node),
+    )
+
+    # Internal Title Nodes that don't need visit_ and depart_ methods
+    # as they are resolved in post_transforms to docutil and sphinx nodes
+    app.add_node(spice_file_end_node)
+    app.add_node(solution_start_node)
+    app.add_node(solution_end_node)
+    app.add_node(spice_file_title)
+    app.add_node(spice_file_subtitle)
+    app.add_node(solution_title)
+    app.add_node(solution_subtitle)
+
+    app.add_node(
+        spice_file_latex_number_reference,
+        latex=(
+            visit_spice_file_latex_number_reference,
+            depart_spice_file_latex_number_reference,
+        ),
+    )
+
+    app.add_directive("spice_file", spice_fileDirective)
+    app.add_directive("spice_file-start", spice_fileStartDirective)
+    app.add_directive("spice_file-end", spice_fileEndDirective)
+    app.add_directive("solution", SolutionDirective)
+    app.add_directive("solution-start", SolutionStartDirective)
+    app.add_directive("solution-end", SolutionEndDirective)
+
+    app.add_transform(CheckGatedDirectives)
+    app.add_transform(MergeGatedspice_files)
+    app.add_transform(MergeGatedSolutions)
+
+    app.add_post_transform(UpdateReferencesToEnumerated)
+    app.add_post_transform(ResolveTitlesInspice_files)
+    app.add_post_transform(ResolveTitlesInSolutions)
+    app.add_post_transform(ResolveLinkTextToSolutions)
+
+    app.add_css_file("spice_file.css")
+
+    return {
+        "version": "builtin",
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
+    }

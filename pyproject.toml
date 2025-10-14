@@ -1,0 +1,76 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sphinx-spice"
+dynamic = ["version"]
+description = "A Sphinx extension for putting spice files in Jupyterbooks."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+authors = [
+    { name = "Jan Genoe", email = "jan.genoe@kuleuven.be" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Plugins",
+    "Environment :: Web Environment",
+    "Framework :: Sphinx :: Extension",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Documentation",
+    "Topic :: Documentation :: Sphinx",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Text Processing",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "sphinx-book-theme",
+    "sphinx>=5",
+]
+
+[project.optional-dependencies]
+all = [
+    "sphinx-exercise[code_style]",
+    "sphinx-exercise[rtd]",
+    "sphinx-exercise[testing]"
+]
+code_style = [
+    "black",
+    "flake8<3.8.0,>=3.7.0",
+    "pre-commit",
+]
+rtd = [
+    "myst-nb~=1.0.0",
+    "sphinx-book-theme",
+    "sphinx_togglebutton",
+    "sphinx>=5,<8",
+]
+testing = [
+    "beautifulsoup4",
+    "coverage",
+    "matplotlib==3.8.*",
+    "myst-nb~=1.0.0",
+    "pytest-cov",
+    "pytest-regressions",
+    "pytest~=8.0.0",
+    "sphinx>=5,<8",
+    "texsoup",
+    "defusedxml", # Required by sphinx-testing
+]
+
+[project.urls]
+Homepage = "https://github.com/jangenoe/sphinx-spice"
+Source = "https://github.com/jangenoe/sphinx-spice"
+Tracker = "https://github.com/jangenoe/sphinx-spice/issues"
+
+[tool.hatch.version]
+path = "sphinx_spice/__init__.py"
