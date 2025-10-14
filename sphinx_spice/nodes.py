@@ -35,15 +35,15 @@ class spice_file_end_node(docutil_nodes.Admonition, docutil_nodes.Element):
     pass
 
 
-class solution_node(docutil_nodes.Admonition, docutil_nodes.Element):
+class spice_simulation_node(docutil_nodes.Admonition, docutil_nodes.Element):
     resolved_title = False
 
 
-class solution_start_node(docutil_nodes.Admonition, docutil_nodes.Element):
+class spice_simulation_start_node(docutil_nodes.Admonition, docutil_nodes.Element):
     resolved_title = False
 
 
-class solution_end_node(docutil_nodes.Admonition, docutil_nodes.Element):
+class spice_simulation_end_node(docutil_nodes.Admonition, docutil_nodes.Element):
     resolved_title = False  # TODO: is this required?
 
 
@@ -60,16 +60,16 @@ class spice_file_subtitle(docutil_nodes.subtitle):
     pass
 
 
-class solution_title(docutil_nodes.title):
+class spice_simulation_title(docutil_nodes.title):
     def default_title(self):
         title_text = self.children[0].astext()
-        if title_text == "Solution to":
+        if title_text == "spice_simulation to":
             return True
         else:
             return False
 
 
-class solution_subtitle(docutil_nodes.subtitle):
+class spice_simulation_subtitle(docutil_nodes.subtitle):
     pass
 
 
@@ -88,15 +88,15 @@ def is_spice_file_enumerable_node(node):
     return isinstance(node, spice_file_enumerable_node)
 
 
-def is_solution_node(node):
-    return isinstance(node, solution_node)
+def is_spice_simulation_node(node):
+    return isinstance(node, spice_simulation_node)
 
 
 def is_extension_node(node):
     return (
         is_spice_file_node(node)
         or is_spice_file_enumerable_node(node)
-        or is_solution_node(node)
+        or is_spice_simulation_node(node)
     )
 
 
@@ -146,7 +146,7 @@ def depart_spice_file_enumerable_node(self, node: Node) -> None:
         self.body.append("\n")
 
 
-def visit_solution_node(self, node: Node) -> None:
+def visit_spice_simulation_node(self, node: Node) -> None:
     """
     Reference Structure is {docname}:{label} and resolved by Sphinx
     """
@@ -166,7 +166,7 @@ def visit_solution_node(self, node: Node) -> None:
         self.body.append("\n")
 
 
-def depart_solution_node(self, node: Node) -> None:
+def depart_spice_simulation_node(self, node: Node) -> None:
     if isinstance(self, LaTeXTranslator):
         self.body.append(LaTeX.depart_admonition())
     else:
