@@ -17,12 +17,12 @@ from .nodes import (
     spice_file_node,
     spice_file_enumerable_node,
     spice_file_end_node,
-    solution_node,
-    solution_start_node,
-    solution_end_node,
+    spice_simulation_node,
+    spice_simulation_start_node,
+    spice_simulation_end_node,
     spice_file_title,
     spice_file_subtitle,
-    solution_title,
+    spice_simulation_title,
 )
 from docutils import nodes
 from sphinx.util import logging
@@ -174,11 +174,11 @@ class spice_fileDirective(Sphinxspice_fileBaseDirective):
         return [node]
 
 
-class SolutionDirective(Sphinxspice_fileBaseDirective):
+class spice_simulationDirective(Sphinxspice_fileBaseDirective):
     """
-    A solution directive
+    A spice_simulation directive
 
-    .. solution:: <spice_file-reference>
+    .. spice_simulation:: <spice_file-reference>
        :label:
        :class:
        :hidden:
@@ -200,10 +200,10 @@ class SolutionDirective(Sphinxspice_fileBaseDirective):
 
     Notes:
     ------
-    Checking for target reference is done in post_transforms for Solution Titles
+    Checking for target reference is done in post_transforms for spice_simulation Titles
     """
 
-    name = "solution"
+    name = "spice_simulation"
     has_content = True
     required_arguments = 1
     optional_arguments = 0
@@ -213,10 +213,10 @@ class SolutionDirective(Sphinxspice_fileBaseDirective):
         "class": directives.class_option,
         "hidden": directives.flag,
     }
-    solution_node = solution_node
+    spice_simulation_node = spice_simulation_node
 
     def run(self) -> List[Node]:
-        self.defaults = {"title_text": "Solution to"}
+        self.defaults = {"title_text": "spice_simulation to"}
         target_label = self.arguments[0]
         self.serial_number = self.env.new_serialno()
 
@@ -224,16 +224,16 @@ class SolutionDirective(Sphinxspice_fileBaseDirective):
         if not hasattr(self.env, "sphinx_spice_file_registry"):
             self.env.sphinx_spice_file_registry = {}
 
-        # Parse :hide-solutions: option
-        if self.env.app.config.hide_solutions:
+        # Parse :hide-spice_simulations: option
+        if self.env.app.config.hide_spice_simulations:
             return []
 
         # Construct Title
-        title = solution_title()
+        title = spice_simulation_title()
         title += nodes.Text(self.defaults["title_text"])
 
         # State Parsing
-        section = nodes.section(ids=["solution-content"])
+        section = nodes.section(ids=["spice_simulation-content"])
         self.state.nested_parse(self.content, self.content_offset, section)
 
         # Fetch Label or Generate One
@@ -243,7 +243,7 @@ class SolutionDirective(Sphinxspice_fileBaseDirective):
             self.options["noindex"] = False
         else:
             self.options["noindex"] = True
-            label = f"{self.env.docname}-solution-{self.serial_number}"
+            label = f"{self.env.docname}-spice_simulation-{self.serial_number}"
 
         # Check for duplicate labels
         # TODO: Should we just issue a warning rather than skip content?
@@ -258,7 +258,7 @@ class SolutionDirective(Sphinxspice_fileBaseDirective):
             classes += self.options.get("class")
 
         # Construct Node
-        node = self.solution_node()
+        node = self.spice_simulation_node()
         node += title
         node += section
         node["target_label"] = target_label
@@ -358,21 +358,21 @@ class spice_fileEndDirective(SphinxDirective):
         return [spice_file_end_node()]
 
 
-class SolutionStartDirective(SolutionDirective):
+class spice_simulationStartDirective(spice_simulationDirective):
     """
-    A gated directive for solution
+    A gated directive for spice_simulation
 
-    .. solution-start:: <spice_file-reference>
+    .. spice_simulation-start:: <spice_file-reference>
        :label:
        :class:
        :hidden:
 
-    This class is a child of SolutionDirective so it supports
-    all the same options as the base solution node
+    This class is a child of spice_simulationDirective so it supports
+    all the same options as the base spice_simulation node
     """
 
-    name = "solution-start"
-    solution_node = solution_start_node
+    name = "spice_simulation-start"
+    spice_simulation_node = spice_simulation_start_node
 
     def run(self):
         # Initialise Gated Registry (if required)
@@ -386,25 +386,25 @@ class SolutionStartDirective(SolutionDirective):
                 "end": [],
                 "sequence": [],
                 "msg": [],
-                "type": "solution",
+                "type": "spice_simulation",
             }
         gated_registry[self.env.docname]["start"].append(self.lineno)
         gated_registry[self.env.docname]["sequence"].append("S")
         gated_registry[self.env.docname]["msg"].append(
-            f"solution-start at line: {self.lineno}"
+            f"spice_simulation-start at line: {self.lineno}"
         )
         # Run Parent Methods
         return super().run()
 
 
-class SolutionEndDirective(SphinxDirective):
+class spice_simulationEndDirective(SphinxDirective):
     """
-    A simple gated directive to mark end of solution
+    A simple gated directive to mark end of spice_simulation
 
-    .. solution-end::
+    .. spice_simulation-end::
     """
 
-    name = "solution-end"
+    name = "spice_simulation-end"
 
     def run(self):
         # Initialise Gated Registry (if required)
@@ -418,11 +418,11 @@ class SolutionEndDirective(SphinxDirective):
                 "end": [],
                 "sequence": [],
                 "msg": [],
-                "type": "solution",
+                "type": "spice_simulation",
             }
         gated_registry[self.env.docname]["end"].append(self.lineno)
         gated_registry[self.env.docname]["sequence"].append("E")
         gated_registry[self.env.docname]["msg"].append(
-            f"solution-end at line: {self.lineno}"
+            f"spice_simulation-end at line: {self.lineno}"
         )
-        return [solution_end_node()]
+        return [spice_simulation_end_node()]

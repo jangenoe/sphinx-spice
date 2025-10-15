@@ -2,7 +2,7 @@
 """
 sphinx_spice_file
 ~~~~~~~~~~~~~~~
-This package is an extension for sphinx to support spice_file and solutions.
+This package is an extension for sphinx to support spice_file and spice_simulations.
 :copyright: Copyright 2020-2021 by the Executable Books team, see AUTHORS.
 :license: MIT, see LICENSE for details.
 """
@@ -25,9 +25,9 @@ from .directive import (
     spice_fileDirective,
     spice_fileStartDirective,
     spice_fileEndDirective,
-    SolutionDirective,
-    SolutionStartDirective,
-    SolutionEndDirective,
+    spice_simulationDirective,
+    spice_simulationStartDirective,
+    spice_simulationEndDirective,
 )
 from .nodes import (
     spice_file_node,
@@ -37,30 +37,30 @@ from .nodes import (
     visit_spice_file_enumerable_node,
     depart_spice_file_enumerable_node,
     spice_file_end_node,
-    solution_node,
-    visit_solution_node,
-    depart_solution_node,
-    solution_start_node,
-    solution_end_node,
+    spice_simulation_node,
+    visit_spice_simulation_node,
+    depart_spice_simulation_node,
+    spice_simulation_start_node,
+    spice_simulation_end_node,
     is_extension_node,
     spice_file_title,
     spice_file_subtitle,
-    solution_title,
-    solution_subtitle,
+    spice_simulation_title,
+    spice_simulation_subtitle,
     spice_file_latex_number_reference,
     visit_spice_file_latex_number_reference,
     depart_spice_file_latex_number_reference,
 )
 from .transforms import (
     CheckGatedDirectives,
-    MergeGatedSolutions,
+    MergeGatedspice_simulations,
     MergeGatedspice_files,
 )
 from .post_transforms import (
     ResolveTitlesInspice_files,
-    ResolveTitlesInSolutions,
+    ResolveTitlesInspice_simulations,
     UpdateReferencesToEnumerated,
-    ResolveLinkTextToSolutions,
+    ResolveLinkTextTospice_simulations,
 )
 
 logger = logging.getLogger(__name__)
@@ -144,7 +144,7 @@ def doctree_read(app: Sphinx, document: Node) -> None:
 
 
 def setup(app: Sphinx) -> Dict[str, Any]:
-    app.add_config_value("hide_solutions", False, "env")
+    app.add_config_value("hide_spice_simulations", False, "env")
 
     app.connect("config-inited", init_numfig)  # event order - 1
     app.connect("env-purge-doc", purge_spice_files)  # event order - 5 per file
@@ -169,21 +169,21 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     )
 
     app.add_node(
-        solution_node,
-        singlehtml=(visit_solution_node, depart_solution_node),
-        html=(visit_solution_node, depart_solution_node),
-        latex=(visit_solution_node, depart_solution_node),
+        spice_simulation_node,
+        singlehtml=(visit_spice_simulation_node, depart_spice_simulation_node),
+        html=(visit_spice_simulation_node, depart_spice_simulation_node),
+        latex=(visit_spice_simulation_node, depart_spice_simulation_node),
     )
 
     # Internal Title Nodes that don't need visit_ and depart_ methods
     # as they are resolved in post_transforms to docutil and sphinx nodes
     app.add_node(spice_file_end_node)
-    app.add_node(solution_start_node)
-    app.add_node(solution_end_node)
+    app.add_node(spice_simulation_start_node)
+    app.add_node(spice_simulation_end_node)
     app.add_node(spice_file_title)
     app.add_node(spice_file_subtitle)
-    app.add_node(solution_title)
-    app.add_node(solution_subtitle)
+    app.add_node(spice_simulation_title)
+    app.add_node(spice_simulation_subtitle)
 
     app.add_node(
         spice_file_latex_number_reference,
@@ -196,18 +196,18 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_directive("spice_file", spice_fileDirective)
     app.add_directive("spice_file-start", spice_fileStartDirective)
     app.add_directive("spice_file-end", spice_fileEndDirective)
-    app.add_directive("solution", SolutionDirective)
-    app.add_directive("solution-start", SolutionStartDirective)
-    app.add_directive("solution-end", SolutionEndDirective)
+    app.add_directive("spice_simulation", spice_simulationDirective)
+    app.add_directive("spice_simulation-start", spice_simulationStartDirective)
+    app.add_directive("spice_simulation-end", spice_simulationEndDirective)
 
     app.add_transform(CheckGatedDirectives)
     app.add_transform(MergeGatedspice_files)
-    app.add_transform(MergeGatedSolutions)
+    app.add_transform(MergeGatedspice_simulations)
 
     app.add_post_transform(UpdateReferencesToEnumerated)
     app.add_post_transform(ResolveTitlesInspice_files)
-    app.add_post_transform(ResolveTitlesInSolutions)
-    app.add_post_transform(ResolveLinkTextToSolutions)
+    app.add_post_transform(ResolveTitlesInspice_simulations)
+    app.add_post_transform(ResolveLinkTextTospice_simulations)
 
     app.add_css_file("spice_file.css")
 
